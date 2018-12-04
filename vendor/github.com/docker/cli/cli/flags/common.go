@@ -27,6 +27,7 @@ var (
 	dockerCertPath  = os.Getenv("DOCKER_CERT_PATH")
 	dockerTLSVerify = os.Getenv("DOCKER_TLS_VERIFY") != ""
 	dockerTLS       = os.Getenv("DOCKER_TLS") != ""
+	dockerContext   = os.Getenv("DOCKER_CONTEXT")
 )
 
 // CommonOptions are options common to both the client and the daemon.

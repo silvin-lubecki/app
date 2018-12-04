@@ -203,7 +203,6 @@ We have lots of ideas for making Compose-based applications easier to share and 
 * Saving required images into the application artifact to support offline installation
 * Signing applications with notary
 
-If you're interested in contributing to the project, jump to [BUILDING.md](BUILDING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Usage
 
@@ -227,16 +226,21 @@ Options:
   -v, --version            Print version information
 
 Commands:
-  completion  Generates completion scripts for the specified shell (bash or zsh)
-  deploy      Deploy or update an application
-  init        Start building a Docker application
-  inspect     Shows metadata, parameters and a summary of the compose file for a given application
-  merge       Merge a multi-file application into a single file
-  push        Push the application to a registry
-  render      Render the Compose file for the application
-  split       Split a single-file application into multiple files
-  validate    Checks the rendered application is syntactically correct
-  version     Print version information
+  add-credentialset Add a CNAB credentialset in the credential store for the given Docker Context
+  bundle            Create a CNAB invocation image and bundle.json for the application.
+  completion        Generates completion scripts for the specified shell (bash or zsh)
+  init              Start building a Docker application
+  inspect           Shows metadata, parameters and a summary of the compose file for a given application
+  install           Install an application
+  merge             Merge a multi-file application into a single file
+  pull              Pull an application from a registry
+  push              Push the application to a registry
+  render            Render the Compose file for the application
+  split             Split a single-file application into multiple files
+  status            Get an application status
+  uninstall         Uninstall an application
+  validate          Checks the rendered application is syntactically correct
+  version           Print version information
 
 Run 'docker-app COMMAND --help' for more information on a command.
 ```
@@ -265,9 +269,3 @@ Set the docker-app completion code for zsh to autoload on startup in your ~/.zsh
 ```sh
 source <(docker-app completion zsh)
 ```
-
-## Experimental
-
-Some commands are flagged as experimental and will remain in this state until they mature. These commands are only accessible using an experimental binary. Feel free to test these commands and give us some feedback!
-
-See [BUILDING.md/Experimental](BUILDING.md#experimental).

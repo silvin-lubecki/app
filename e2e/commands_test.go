@@ -224,31 +224,23 @@ func TestSplitMerge(t *testing.T) {
 	icmd.RunCommand(dockerApp, "split", "split").Assert(t, icmd.Success)
 }
 
-func TestURL(t *testing.T) {
-	url := "https://raw.githubusercontent.com/docker/app/v0.4.1/examples/hello-world/hello-world.dockerapp"
-	result := icmd.RunCommand(dockerApp, "inspect", url).Assert(t, icmd.Success)
-	assert.Assert(t, golden.String(result.Combined(), "helloworld-inspect.golden"))
-}
-
 func TestWithRegistry(t *testing.T) {
 	r := startRegistry(t)
 	defer r.Stop(t)
 	registry := r.GetAddress(t)
 	// push to a registry
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", "-t", "latest", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp:0.1.0").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my.dockerapp").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/myuser/my:0.1.0").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "push", "--insecure", "--namespace", registry+"/myuser", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "push", "--insecure", "--namespace", registry+"/myuser", "-t", "latest", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", "--insecure", registry+"/myuser/myapp:0.1.0").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", "--insecure", registry+"/myuser/myapp:latest").Assert(t, icmd.Success)
 	// push a single-file app to a registry
 	dir := fs.NewDir(t, "save-prepare-build", fs.WithFile("my.dockerapp", singleFileApp))
 	defer dir.Remove()
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "push", "--insecure", "--namespace", registry+"/myuser", dir.Join("my.dockerapp")).Assert(t, icmd.Success)
 
 	// push with custom repo name
-	icmd.RunCommand(dockerApp, "push", "-t", "marshmallows", "--namespace", registry+"/rainbows", "--repo", "unicorns", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
-	icmd.RunCommand(dockerApp, "inspect", registry+"/rainbows/unicorns:marshmallows").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "push", "--insecure", "-t", "marshmallows", "--namespace", registry+"/rainbows", "--repo", "unicorns", "testdata/render/envvariables/my.dockerapp").Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "inspect", "--insecure", registry+"/rainbows/unicorns:marshmallows").Assert(t, icmd.Success)
 }
 
 func TestAttachmentsWithRegistry(t *testing.T) {
@@ -261,10 +253,10 @@ func TestAttachmentsWithRegistry(t *testing.T) {
 	)
 	defer dir.Remove()
 
-	icmd.RunCommand(dockerApp, "push", "--namespace", registry+"/acmecorp", dir.Join("attachments.dockerapp")).Assert(t, icmd.Success)
+	icmd.RunCommand(dockerApp, "push", "--insecure", "--namespace", registry+"/acmecorp", "--repo", "attachments", dir.Join("attachments.dockerapp")).Assert(t, icmd.Success)
 
 	// inspect will run the core pull code too
-	result := icmd.RunCommand(dockerApp, "inspect", registry+"/acmecorp/attachments.dockerapp:0.1.0")
+	result := icmd.RunCommand(dockerApp, "inspect", "--insecure", registry+"/acmecorp/attachments:0.1.0")
 
 	result.Assert(t, icmd.Success)
 	resultOutput := result.Combined()

@@ -33,6 +33,9 @@ import (
 	"github.com/theupdateframework/notary/passphrase"
 )
 
+// ContextDockerHost is the reported context when DOCKER_HOST env var or -H flag is set
+const ContextDockerHost = "<DOCKER_HOST>"
+
 // Streams is an interface which exposes the standard input and output streams
 type Streams interface {
 	In() *InStream
@@ -49,6 +52,8 @@ type Cli interface {
 	SetOut(out *OutStream)
 	SetErr(err io.Writer)
 	SetIn(in *InStream)
+	SetOut(out *OutStream)
+	SetErr(err io.Writer)
 	ConfigFile() *configfile.ConfigFile
 	ServerInfo() ServerInfo
 	ClientInfo() ClientInfo
@@ -97,9 +102,19 @@ func (cli *DockerCli) Client() client.APIClient {
 	return cli.client
 }
 
+// SetOut sets the writer used for stdout
+func (cli *DockerCli) SetOut(out *OutStream) {
+	cli.out = out
+}
+
 // Out returns the writer used for stdout
 func (cli *DockerCli) Out() *OutStream {
 	return cli.out
+}
+
+// SetErr sets the writer used for stderr
+func (cli *DockerCli) SetErr(err io.Writer) {
+	cli.err = err
 }
 
 // Err returns the writer used for stderr

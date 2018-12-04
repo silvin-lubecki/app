@@ -10,7 +10,8 @@ RUN apk add --no-cache \
   git \
   curl \
   util-linux \
-  coreutils
+  coreutils \
+  build-base
 RUN curl -Ls https://download.docker.com/linux/static/$DOCKERCLI_CHANNEL/x86_64/docker-$DOCKERCLI_VERSION.tgz | \
   tar -xz docker/docker && \
   mv docker/docker /usr/bin/docker
@@ -27,6 +28,11 @@ RUN go get -d gopkg.in/mjibson/esc.v0 && \
     cd /go/src/github.com/mjibson/esc && \
     go build -v -o /usr/bin/esc . && \
     rm -rf /go/src/* /go/pkg/* /go/bin/*
+COPY vendor/github.com/deis/duffle /go/src/github.com/deis/duffle
+# Build duffle and init
+RUN (cd /go/src/github.com/deis/duffle && \
+  make bootstrap build-release && \
+  ./bin/duffle-linux-amd64 init)
 COPY . .
 
 # FIXME(vdemeester) change from docker-app to dev once buildkit is merged in moby/docker

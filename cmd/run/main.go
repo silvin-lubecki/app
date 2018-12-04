@@ -69,6 +69,11 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Status failed: %s", err)
 			os.Exit(1)
 		}
+	case cnabActionInspect:
+		if err := inspect(); err != nil {
+			fmt.Fprintf(os.Stderr, "Inspect failed: %s", err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Fprintf(os.Stderr, "Action %q is not supported", op.action)
 		os.Exit(1)

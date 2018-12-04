@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deis/duffle/pkg/bundle"
 )
 
 // UnsignedLoader loads a bundle.json that is not signed.

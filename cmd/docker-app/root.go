@@ -7,6 +7,7 @@ import (
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/command/context"
 	cliconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/debug"
 	cliflags "github.com/docker/cli/cli/flags"
@@ -44,27 +45,41 @@ func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 // addCommands adds all the commands from cli/command to the root command
 func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 	cmd.AddCommand(
+<<<<<<< HEAD
 		installCmd(dockerCli),
 		upgradeCmd(dockerCli),
 		uninstallCmd(dockerCli),
 		statusCmd(dockerCli),
+=======
+>>>>>>> Add CNAB support
 		initCmd(),
-		inspectCmd(dockerCli),
-		mergeCmd(dockerCli),
-		pushCmd(),
+		// Bundle commands
+		bundleCmd(dockerCli),
+		installCmd(dockerCli),
+		uninstallCmd(dockerCli),
+		statusCmd(dockerCli),
+		upgradeCmd(dockerCli),
+		// Package commands
 		renderCmd(dockerCli),
-		splitCmd(),
+		inspectCmd(dockerCli),
 		validateCmd(),
+		splitCmd(),
+		mergeCmd(dockerCli),
+		// Share commands
+		pushCmd(dockerCli),
+		pullCmd(dockerCli),
+		// Tools commands
 		versionCmd(dockerCli),
 		completionCmd(dockerCli, cmd),
-		bundleCmd(dockerCli),
+		// Environment commands
+		credentialSetCmd(dockerCli),
+		context.NewContextCommand(dockerCli),
 	)
 	if internal.Experimental == "on" {
 		cmd.AddCommand(
 			imageAddCmd(),
 			imageLoadCmd(),
 			packCmd(dockerCli),
-			pullCmd(),
 			unpackCmd(),
 		)
 	}

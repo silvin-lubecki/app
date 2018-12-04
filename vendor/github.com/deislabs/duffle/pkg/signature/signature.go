@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/openpgp/clearsign"
 	"golang.org/x/crypto/openpgp/packet"
 
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deis/duffle/pkg/bundle"
 )
 
 // ErrNoSignature indicates that no signature was found in a block of text

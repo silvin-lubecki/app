@@ -248,7 +248,8 @@ func resolveBundle(dockerCli command.Cli, namespace, name string, insecure bool)
 	case nameKindDir, nameKindEmpty:
 		return extractAndLoadAppBasedBundle(dockerCli, namespace, name)
 	case nameKindReference:
-		// TODO: pull the bundle
+		// revert to local duffle bundle store or pull the bundle image
+		return pullBundle(dockerCli, name, false, insecure)
 	}
 	return nil, fmt.Errorf("could not resolve bundle %q", name)
 }
