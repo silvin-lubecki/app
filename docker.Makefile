@@ -13,9 +13,19 @@ E2E_CROSS_CTNR_NAME := $(BIN_NAME)-e2e-cross-$(TAG)
 COV_CTNR_NAME := $(BIN_NAME)-cov-$(TAG)
 SCHEMAS_CTNR_NAME := $(BIN_NAME)-schemas-$(TAG)
 
-BUILD_ARGS="--build-arg=EXPERIMENTAL=$(EXPERIMENTAL)"
+
+BUILD_ARGS=--build-arg=EXPERIMENTAL=$(EXPERIMENTAL) --build-arg=TAG=$(TAG) --build-arg=COMMIT=$(COMMIT)
 
 PKG_PATH := /go/src/$(PKG_NAME)
+
+CNAB_BASE_INVOCATION_IMAGE_NAME := docker/cnab-app-base:$(TAG)
+
+CNAB_BASE_INVOCATION_IMAGE_PATH := /tmp/invocation-image-$(TAG).tar
+RM := rm
+ifeq ($(OS),Windows_NT)
+  CNAB_BASE_INVOCATION_IMAGE_PATH := c:\tmp\invocation-image-$(TAG).tar
+  RM := del
+endif
 
 .DEFAULT: all
 all: cross test
@@ -64,7 +74,7 @@ test: test-unit test-e2e ## run all tests
 test-unit: build_dev_image ## run unit tests
 	docker run --rm $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) test-unit
 
-test-e2e: build_dev_image ## run end-to-end tests
+test-e2e: build_dev_image invocation-image ## run end-to-end tests
 	docker run -v /var/run:/var/run:ro --rm --network="host" $(DEV_IMAGE_NAME) make EXPERIMENTAL=$(EXPERIMENTAL) bin/$(BIN_NAME) test-e2e
 
 COV_LABEL := com.docker.app.cov-run=$(TAG)
@@ -95,7 +105,23 @@ specification/bindata.go: specification/schemas/*.json build_dev_image
 
 schemas: specification/bindata.go ## generate specification/bindata.go from json schemas
 
+invocation-image:
+	docker build $(BUILD_ARGS) --target=invocation -t $(CNAB_BASE_INVOCATION_IMAGE_NAME) .
+
+save-invocation-image: invocation-image
+	docker save $(CNAB_BASE_INVOCATION_IMAGE_NAME) -o $(CNAB_BASE_INVOCATION_IMAGE_PATH)
+
+load-invocation-image:
+	docker load -i $(CNAB_BASE_INVOCATION_IMAGE_PATH)
+	$(RM) $(CNAB_BASE_INVOCATION_IMAGE_PATH)
+
+clean-invocation-image:
+	$(RM) $(CNAB_BASE_INVOCATION_IMAGE_PATH)
+
+push-invocation-image:
+	docker push $(CNAB_BASE_INVOCATION_IMAGE_NAME)
+
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help
+.PHONY: lint test-e2e test-unit test cross e2e-cross coverage gradle-test shell build_dev_image tars vendor schemas help invocation-image
