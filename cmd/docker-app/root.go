@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/docker/app/internal"
 	"github.com/docker/cli/cli"
@@ -43,7 +44,7 @@ func newRootCmd(dockerCli *command.DockerCli) *cobra.Command {
 // addCommands adds all the commands from cli/command to the root command
 func addCommands(cmd *cobra.Command, dockerCli command.Cli) {
 	cmd.AddCommand(
-		deployCmd(dockerCli),
+		installCmd(dockerCli),
 		initCmd(),
 		inspectCmd(dockerCli),
 		mergeCmd(dockerCli),
@@ -83,4 +84,9 @@ func dockerPreRun(opts *cliflags.ClientOptions) {
 	if opts.Common.Debug {
 		debug.Enable()
 	}
+}
+
+func muteDockerCli(dockerCli command.Cli) {
+	dockerCli.SetOut(command.NewOutStream(ioutil.Discard))
+	dockerCli.SetErr(ioutil.Discard)
 }
