@@ -77,11 +77,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c105cbb54ef4f64e0b30ed51b03fa9dd2cfba6d5e8a08eeac9b2be919457097c"
+  digest = "1:792024d8e8fabed9bbfd7d86b9dc71855854272a5f5eb52d0836be492fb13118"
   name = "github.com/containerd/continuity"
   packages = [
     "devices",
     "driver",
+    "fs",
     "pathdriver",
     "syscallx",
     "sysx",
@@ -107,16 +108,27 @@
 
 [[projects]]
   branch = "dockercon-version"
-  digest = "1:96b6594299245f764ecfc93ac72d1970834eb4c37f49f880d1f4bc06810f5289"
-  name = "github.com/deis/duffle"
-  packages = ["pkg/bundle"]
+  digest = "1:ae6912a80f46305180dbcab0ccf8d6c60e13e97a855817ca5714e21985e272cb"
+  name = "github.com/deislabs/duffle"
+  packages = [
+    "pkg/action",
+    "pkg/bundle",
+    "pkg/claim",
+    "pkg/credentials",
+    "pkg/driver",
+    "pkg/duffle/home",
+    "pkg/image",
+    "pkg/loader",
+    "pkg/signature",
+    "pkg/utils/crud",
+  ]
   pruneopts = "NUT"
-  revision = "74ea41e356407e163d476bf3e111ffd1f41524ab"
-  source = "git@github.com:simonferquel/duffle.git"
+  revision = "04760f2d9f1b099bf40631d83648eb13d7e5f698"
+  source = "github.com/silvin-lubecki/duffle"
 
 [[projects]]
-  branch = "expose-stack-commands-1500"
-  digest = "1:934affc0c01e14833fa0fabe838af5627c10e4da99d91cb9cd2717f4989ffa9e"
+  branch = "configure-cli-streams"
+  digest = "1:b1dbea77f9c11b55d0a01579de1f04893484899155841a8ea1a690c4e52e6de7"
   name = "github.com/docker/cli"
   packages = [
     "cli",
@@ -163,7 +175,7 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "dcd86e41f081c20d1e1a21e7732a0d63caa9ecc1"
+  revision = "3de672393671ef48d46fa347b938a0747a8db6e1"
   source = "github.com/silvin-lubecki/cli"
 
 [[projects]]
@@ -210,7 +222,8 @@
   revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
 
 [[projects]]
-  digest = "1:dbff9d4a36a22c2a0ce719cce0f40681f6a5576de7c68894b83bd98e964c8802"
+  branch = "master"
+  digest = "1:b1ebf6d2021d75519a0e508774eb0df1a9f25ddcef2a3a75c4e3d662fc0cd773"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -240,6 +253,7 @@
     "image/v1",
     "layer",
     "oci",
+    "oci/caps",
     "pkg/archive",
     "pkg/chrootarchive",
     "pkg/containerfs",
@@ -272,7 +286,7 @@
     "registry/resumable",
   ]
   pruneopts = "NUT"
-  revision = "53e55db9d3f0f0910ea95515222c8a35e106f10e"
+  revision = "5ec31380a5d3ea92fc68e53cd1fc96f11ac02e6e"
 
 [[projects]]
   digest = "1:8866486038791fe65ea1abf660041423954b1f3fb99ea6a0ad8424422e943458"
@@ -357,6 +371,14 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "3f9db97f856818214da2e1057f8ad84803971cff"
+
+[[projects]]
+  digest = "1:0cb5b9c5e5754914abee038463a4c887f873861ec294c2535e3967e8042d3bcd"
+  name = "github.com/genuinetools/reg"
+  packages = ["registry"]
+  pruneopts = "NUT"
+  revision = "4a4d0e5d108ca9558879bdf1aba94d09e921cf1e"
+  version = "v0.16.0"
 
 [[projects]]
   digest = "1:81466b4218bf6adddac2572a30ac733a9255919bc2f470b4827a317bd4ee1756"
@@ -586,6 +608,14 @@
   revision = "39771216ff4c63d11f5e604076f9c45e8be1067b"
 
 [[projects]]
+  digest = "1:deffbc414da9eff0c34c5d2d97c89f6647432e1dd44c22acd9130be7c4e9401e"
+  name = "github.com/oklog/ulid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "02a8604050d8466dd915307496174adb9be4593a"
+  version = "v1.3.1"
+
+[[projects]]
   digest = "1:e0cc8395ea893c898ff5eb0850f4d9851c1f57c78c232304a026379a47a552d0"
   name = "github.com/opencontainers/go-digest"
   packages = ["."]
@@ -640,6 +670,14 @@
   pruneopts = "NUT"
   revision = "5f041e8faa004a95c88a202771f4cc3e991971e6"
   version = "v2.0.1"
+
+[[projects]]
+  digest = "1:014d3763649dd2f071fcf4acb03f3a2964c0c6dcf5581f4585fdd0d492235518"
+  name = "github.com/peterhellberg/link"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d1cebc7ea14a5fc0de7cb4a45acae773161642c6"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:5cf3f025cbee5951a4ee961de067c8a89fc95a5adabead774f82822efabab121"
@@ -715,6 +753,14 @@
   revision = "3ebe029320b2676d667ae88da602a5f854788a8a"
 
 [[projects]]
+  branch = "master"
+  digest = "1:e14e467ed00ab98665623c5060fa17e3d7079be560ffc33cabafd05d35894f05"
+  name = "github.com/syndtr/gocapability"
+  packages = ["capability"]
+  pruneopts = "NUT"
+  revision = "d98352740cb2c55f81556b63d4a1ec64c5a319c2"
+
+[[projects]]
   digest = "1:5657d02714d03999f98887942ca12e7d0492676d4485966a5a7819b84887790f"
   name = "github.com/theupdateframework/notary"
   packages = [
@@ -782,9 +828,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cb77e5934866333fa0784326a57e64c4da128001c94fbd1d29819d79bd3b1087"
+  digest = "1:4b660675009b1bb13d0faea73f8356cd81b5f560f40a35b366acfc6f63d35674"
   name = "golang.org/x/crypto"
   packages = [
+    "cast5",
+    "openpgp",
+    "openpgp/armor",
+    "openpgp/clearsign",
+    "openpgp/elgamal",
+    "openpgp/errors",
+    "openpgp/packet",
+    "openpgp/s2k",
     "pbkdf2",
     "ssh/terminal",
   ]
@@ -823,6 +877,14 @@
   ]
   pruneopts = "NUT"
   revision = "36a7019397c4c86cf59eeab3bc0d188bac444277"
+
+[[projects]]
+  branch = "master"
+  digest = "1:b521f10a2d8fa85c04a8ef4e62f2d1e14d303599a55d64dabf9f5a02f84d35eb"
+  name = "golang.org/x/sync"
+  packages = ["errgroup"]
+  pruneopts = "NUT"
+  revision = "37e7f081c4d4c64e13b10787722085407fe5d15f"
 
 [[projects]]
   branch = "master"
@@ -1130,7 +1192,14 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cbroglie/mustache",
-    "github.com/deis/duffle/pkg/bundle",
+    "github.com/deislabs/duffle/pkg/action",
+    "github.com/deislabs/duffle/pkg/bundle",
+    "github.com/deislabs/duffle/pkg/claim",
+    "github.com/deislabs/duffle/pkg/credentials",
+    "github.com/deislabs/duffle/pkg/driver",
+    "github.com/deislabs/duffle/pkg/duffle/home",
+    "github.com/deislabs/duffle/pkg/loader",
+    "github.com/deislabs/duffle/pkg/utils/crud",
     "github.com/docker/cli/cli",
     "github.com/docker/cli/cli/command",
     "github.com/docker/cli/cli/command/stack",
@@ -1157,6 +1226,8 @@
     "github.com/docker/docker/api/types",
     "github.com/docker/docker/distribution",
     "github.com/docker/docker/pkg/archive",
+    "github.com/docker/docker/pkg/homedir",
+    "github.com/docker/docker/pkg/jsonmessage",
     "github.com/docker/docker/pkg/term",
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",

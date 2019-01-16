@@ -46,6 +46,8 @@ type Cli interface {
 	Out() *OutStream
 	Err() io.Writer
 	In() *InStream
+	SetOut(out *OutStream)
+	SetErr(err io.Writer)
 	SetIn(in *InStream)
 	ConfigFile() *configfile.ConfigFile
 	ServerInfo() ServerInfo
@@ -105,14 +107,24 @@ func (cli *DockerCli) Err() io.Writer {
 	return cli.err
 }
 
-// SetIn sets the reader used for stdin
-func (cli *DockerCli) SetIn(in *InStream) {
-	cli.in = in
-}
-
 // In returns the reader used for stdin
 func (cli *DockerCli) In() *InStream {
 	return cli.in
+}
+
+// SetOut sets the writer used for stdout
+func (cli *DockerCli) SetOut(out *OutStream) {
+	cli.out = out
+}
+
+// SetErr sets the writer used for stderr
+func (cli *DockerCli) SetErr(err io.Writer) {
+	cli.err = err
+}
+
+// SetIn sets the reader used for stdin
+func (cli *DockerCli) SetIn(in *InStream) {
+	cli.in = in
 }
 
 // ShowHelp shows the command help.

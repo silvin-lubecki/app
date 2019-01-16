@@ -29,13 +29,13 @@ required = ["github.com/wadey/gocovmerge"]
 
 [[constraint]]
   name = "github.com/docker/cli"
-  branch = "expose-stack-commands-1500"
+  branch = "configure-cli-streams"
   source = "github.com/silvin-lubecki/cli"
 
-[[constraint]]
-  name = "github.com/deis/duffle"
+[[override]]
+  name = "github.com/deislabs/duffle"
   branch = "dockercon-version"
-  source = "git@github.com:simonferquel/duffle.git"
+  source = "github.com/silvin-lubecki/duffle"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
@@ -56,10 +56,6 @@ required = ["github.com/wadey/gocovmerge"]
 [[override]]
   name = "github.com/docker/go-metrics"
   revision = "d466d4f6fd960e01820085bd7e1a24426ee7ef18"
-
-[[override]]
-  name = "github.com/docker/docker"
-  revision = "53e55db9d3f0f0910ea95515222c8a35e106f10e"
 
 [[override]]
   name = "github.com/docker/distribution"
