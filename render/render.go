@@ -41,28 +41,31 @@ var (
 // Render renders the Compose file for this app, merging in parameters files, other compose files, and env
 // appname string, composeFiles []string, parametersFiles []string
 func Render(app *types.App, env map[string]string, imageMap map[string]bundle.Image) (*composetypes.Config, error) {
+	composeContent, err := RenderFile(app, env, string(app.Composes()[0]))
+	if err != nil {
+		return nil, err
+	}
+	return render(app.Path, composeContent, imageMap)
+}
+
+func RenderFile(app *types.App, env map[string]string, content string) (string, error) {
 	// prepend the app parameters to the argument parameters
 	// load the parameters into a struct
 	fileParameters := app.Parameters()
 	// inject our metadata
 	metaPrefixed, err := parameters.Load(app.MetadataRaw(), parameters.WithPrefix("app"))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	envParameters, err := parameters.FromFlatten(env)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	allParameters, err := parameters.Merge(fileParameters, metaPrefixed, envParameters)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to merge parameters")
+		return "", errors.Wrap(err, "failed to merge parameters")
 	}
-	composeContent := string(app.Composes()[0])
-	composeContent, err = substituteParams(allParameters.Flatten(), composeContent)
-	if err != nil {
-		return nil, err
-	}
-	return render(app.Path, composeContent, imageMap)
+	return substituteParams(allParameters.Flatten(), content)
 }
 
 func substituteParams(allParameters map[string]string, composeContent string) (string, error) {

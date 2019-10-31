@@ -1,2 +1,6 @@
 port: 8080
 text: Hello, World!
+nginx:
+  port: 8181
+kube:
+  namespace: "mynamespace"
