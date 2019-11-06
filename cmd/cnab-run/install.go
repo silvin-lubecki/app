@@ -1,22 +1,32 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
+	"strings"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/app/internal"
 	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/render"
+	"github.com/docker/app/types"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack"
 	"github.com/docker/cli/cli/command/stack/options"
 	"github.com/docker/cli/cli/command/stack/swarm"
 	composetypes "github.com/docker/cli/cli/compose/types"
+	kubecontext "github.com/docker/cli/cli/context/kubernetes"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -47,6 +57,11 @@ func installAction(instanceName string) error {
 		return err
 	}
 	parameters := packager.ExtractCNABParametersValues(packager.ExtractCNABParameterMapping(app.Parameters()), os.Environ())
+	if orchestrator == command.OrchestratorKubernetes {
+		if err := applyPlainKubernetes(cli, app, parameters); err != nil {
+			return err
+		}
+	}
 	rendered, err := render.Render(app, parameters, imageMap)
 	if err != nil {
 		return err
@@ -69,6 +84,67 @@ func installAction(instanceName string) error {
 		ResolveImage:     swarm.ResolveImageAlways,
 		SendRegistryAuth: sendRegistryAuth,
 	})
+}
+
+func applyPlainKubernetes(cli command.Cli, app *types.App, parameters map[string]string) error {
+	// Parse attachments to find kube-manifest.yml file
+	for _, a := range app.Attachments() {
+		if strings.HasSuffix(a.Path(), "kube-manifest.yml") {
+			buf, err := ioutil.ReadFile(filepath.Join(app.Path, a.Path()))
+			if err != nil {
+				return err
+			}
+			// Read Manifest
+			manifest := []string{}
+			if err := yaml.Unmarshal(buf, &manifest); err != nil {
+				return err
+			}
+			// Retrieve kube context from cli context store
+			kubeConfig, err := kubecontext.ConfigFromContext("cnab", cli.ContextStore())
+			if err != nil {
+				return err
+			}
+			rawCfg, err := kubeConfig.RawConfig()
+			if err != nil {
+				return err
+			}
+			data, err := clientcmd.Write(rawCfg)
+			if err != nil {
+				return err
+			}
+			tmp, err := ioutil.TempDir("", "")
+			if err != nil {
+				return err
+			}
+			configPath := filepath.Join(tmp, "config")
+			if err := ioutil.WriteFile(configPath, data, 0644); err != nil {
+				return err
+			}
+
+			// Apply all the k8s yaml files
+			for _, m := range manifest {
+				fmt.Printf("Applying Kube YAML file %q\n", m)
+				kubeYaml, err := ioutil.ReadFile(filepath.Join(app.Path, m))
+				if err != nil {
+					return err
+				}
+				kubeYamlRendered, err := render.RenderFile(app, parameters, string(kubeYaml))
+				if err != nil {
+					return err
+				}
+
+				kubectlCmd := exec.Command("kubectl", "apply", "-f", "-")
+				kubectlCmd.Stdin = bytes.NewBuffer([]byte(kubeYamlRendered))
+				kubectlCmd.Stdout = os.Stdout
+				kubectlCmd.Stderr = os.Stderr
+				kubectlCmd.Env = append(os.Environ(), fmt.Sprintf("KUBECONFIG=%s", configPath))
+				if err := kubectlCmd.Run(); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func getFlagset(orchestrator command.Orchestrator) *pflag.FlagSet {
