@@ -59,6 +59,13 @@ func parseCommandlineCredential(c string) (string, string, error) {
 	}
 	name := split[0]
 	value := split[1]
+	if _, err := os.Stat(value); err == nil{
+		v, err := ioutil.ReadFile(value)
+		if err != nil{
+			return "", "", err
+		}
+		value = string(v)
+	}
 	return name, value, nil
 }
 
