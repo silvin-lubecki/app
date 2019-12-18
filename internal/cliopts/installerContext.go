@@ -31,27 +31,31 @@ func (o *InstallerContextOptions) SetInstallerContext(dockerCli command.Cli) (co
 			return nil, errors.Wrapf(err, "Unknown docker context %s", o.installerContext)
 		}
 		fmt.Fprintf(dockerCli.Out(), "Using context %q to run installer image", o.installerContext)
-		cli, err := command.NewDockerCli()
-		if err != nil {
-			return nil, err
-		}
-		opts := flags.ClientOptions{
-			Common: &flags.CommonOptions{
-				Context:  o.installerContext,
-				LogLevel: logrus.GetLevel().String(),
-			},
-			ConfigDir: config.Dir(),
-		}
-		if err = cli.Apply(
-			command.WithInputStream(dockerCli.In()),
-			command.WithOutputStream(dockerCli.Out()),
-			command.WithErrorStream(dockerCli.Err())); err != nil {
-			return nil, err
-		}
-		if err = cli.Initialize(&opts); err != nil {
-			return nil, err
-		}
-		return cli, nil
+		return CloneDockerCLI(dockerCli, o.installerContext)
 	}
 	return dockerCli, nil
+}
+
+func CloneDockerCLI(dockerCli command.Cli, context string) (command.Cli, error) {
+	cli, err := command.NewDockerCli()
+	if err != nil {
+		return nil, err
+	}
+	opts := flags.ClientOptions{
+		Common: &flags.CommonOptions{
+			Context:  context,
+			LogLevel: logrus.GetLevel().String(),
+		},
+		ConfigDir: config.Dir(),
+	}
+	if err = cli.Apply(
+		command.WithInputStream(dockerCli.In()),
+		command.WithOutputStream(dockerCli.Out()),
+		command.WithErrorStream(dockerCli.Err())); err != nil {
+		return nil, err
+	}
+	if err = cli.Initialize(&opts); err != nil {
+		return nil, err
+	}
+	return cli, nil
 }

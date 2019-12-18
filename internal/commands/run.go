@@ -2,22 +2,26 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 
-	"github.com/docker/app/internal/packager"
-
-	"github.com/docker/app/internal/image"
-
-	"github.com/deislabs/cnab-go/driver"
-	"github.com/docker/app/internal/cliopts"
+	"github.com/docker/cli/cli/context/docker"
+	"github.com/docker/cli/cli/context/kubernetes"
 
 	"github.com/deislabs/cnab-go/action"
 	"github.com/deislabs/cnab-go/credentials"
+	"github.com/deislabs/cnab-go/driver"
 	bdl "github.com/docker/app/internal/bundle"
+	"github.com/docker/app/internal/cliopts"
 	"github.com/docker/app/internal/cnab"
+	"github.com/docker/app/internal/dependency"
+	"github.com/docker/app/internal/image"
+	"github.com/docker/app/internal/packager"
 	"github.com/docker/app/internal/store"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
+	contextStore "github.com/docker/cli/cli/context/store"
 	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -110,10 +114,12 @@ func runBundle(dockerCli command.Cli, bndl *image.AppImage, opts runOptions, ins
 	if err := bndl.Validate(); err != nil {
 		return err
 	}
+
 	installationName := opts.stackName
 	if installationName == "" {
 		installationName = namesgenerator.GetRandomName(0)
 	}
+
 	logrus.Debugf(`Looking for a previous installation "%q"`, installationName)
 	if installation, err := installationStore.Read(installationName); err == nil {
 		// A failed installation can be overridden, but with a warning
@@ -129,6 +135,10 @@ func runBundle(dockerCli command.Cli, bndl *image.AppImage, opts runOptions, ins
 	}
 	installation, err := store.NewInstallation(installationName, ref, bndl)
 	if err != nil {
+		return err
+	}
+
+	if dockerCli, err = runDependencies(dockerCli, bndl, opts, installerContext, installationName, installation); err != nil {
 		return err
 	}
 
@@ -177,4 +187,121 @@ func runBundle(dockerCli command.Cli, bndl *image.AppImage, opts runOptions, ins
 
 	fmt.Fprintf(os.Stdout, "App %q running on context %q\n", installationName, dockerCli.CurrentContext())
 	return nil
+}
+
+func runDependencies(dockerCli command.Cli, bndl *image.AppImage, opts runOptions, installerContext *cliopts.InstallerContextOptions,
+	installationName string, installation *store.Installation) (command.Cli, error) {
+	deps, err := dependency.GetDependencies(bndl.Bundle)
+	if err != nil {
+		return dockerCli, err
+	}
+	if deps == nil {
+		return dockerCli, nil
+	}
+	depsInstallationNames := []string{}
+	for _, dep := range deps.Dependencies {
+		fmt.Println("Installing dependency", dep.Name, dep.Image)
+		// Resolve image
+		imageStore, err := prepareImageStore()
+		if err != nil {
+			return dockerCli, err
+		}
+
+		bndl, ref, err := cnab.GetBundle(dockerCli, imageStore, dep.Image)
+		if err != nil {
+			return dockerCli, errors.Wrapf(err, "Unable to find App %q", dep.Image)
+		}
+		// Add parameters and credentials
+		opts.stackName = fmt.Sprintf("%s-%s", installationName, dep.Name)
+		depsInstallationNames = append(depsInstallationNames, opts.stackName)
+		for key, value := range dep.Parameters {
+			opts.Overrides = append(opts.Overrides, fmt.Sprintf("%s=%s", key, value))
+		}
+		for key, value := range dep.Credentials {
+			opts.credentials = append(opts.credentials, fmt.Sprintf("%s=%s", key, value))
+		}
+		if err := runBundle(dockerCli, bndl, opts, installerContext, ref.String()); err != nil {
+			return dockerCli, err
+		}
+		// Create docker context if needed
+		if dep.Context != nil {
+			stackOrchestrator, err := command.NormalizeOrchestrator(dep.Context.Orchestrator)
+			if err != nil {
+				return dockerCli, err
+			}
+			contextMetadata := contextStore.Metadata{
+				Endpoints: make(map[string]interface{}),
+				Metadata: command.DockerContext{
+					Description:       dep.Context.Description,
+					StackOrchestrator: stackOrchestrator,
+				},
+				Name: dep.Context.Name,
+			}
+			contextTLSData := contextStore.ContextTLSData{
+				Endpoints: make(map[string]contextStore.EndpointTLSData),
+			}
+			dockerMetadata, err := dockerCli.ContextStore().GetMetadata(dep.Context.FromDockerContext)
+			if err != nil {
+				return dockerCli, err
+			}
+			if ep, ok := dockerMetadata.Endpoints[docker.DockerEndpoint].(docker.EndpointMeta); ok {
+				contextMetadata.Endpoints[docker.DockerEndpoint] = ep
+			}
+
+			// Kube part
+			kubeConfig, err := resolveKubeconfig(dockerCli, opts.stackName, dep.Context.Kubeconfig)
+			if err != nil {
+				return dockerCli, err
+			}
+			kubeEp, err := kubernetes.FromKubeConfig(kubeConfig, dep.Context.Kubecontext, "")
+			if err != nil {
+				return dockerCli, err
+			}
+			contextMetadata.Endpoints[kubernetes.KubernetesEndpoint] = &kubeEp.EndpointMeta
+			contextTLSData.Endpoints[kubernetes.KubernetesEndpoint] = *kubeEp.TLSData.ToStoreTLSData()
+
+			if err := dockerCli.ContextStore().CreateOrUpdate(contextMetadata); err != nil {
+				return dockerCli, err
+			}
+			if err := dockerCli.ContextStore().ResetTLSMaterial(dep.Context.Name, &contextTLSData); err != nil {
+				return dockerCli, err
+			}
+			installerContext = dep.Context.Name
+			dockerCli, err = cliopts.CloneDockerCLI(dockerCli, installerContext)
+			if err != nil {
+				return dockerCli, err
+			}
+		}
+	}
+	// Update main installation with dependencies installation name
+	installation.Custom = depsInstallationNames
+	return dockerCli, nil
+}
+
+func resolveKubeconfig(dockerCli command.Cli, installationName, value string) (string, error) {
+	_, installationStore, _, err := prepareStores(dockerCli.CurrentContext())
+	if err != nil {
+		return "", err
+	}
+	installation, err := installationStore.Read(installationName)
+	if err != nil {
+		return "", err
+	}
+	outputKey := strings.TrimPrefix(value, "outputs.")
+	output, ok := installation.Outputs[outputKey]
+	if !ok {
+		return "", fmt.Errorf("unknown output key %q for kubeconfig in dependencies.yml", value)
+	}
+	data, ok := output.(string)
+	if !ok {
+		return "", fmt.Errorf("invalid string output %q for kubeconfig in dependencies.yml", value)
+	}
+	kubeconfig := strings.ReplaceAll(data, "\\n", "\n")
+	tmp, err := ioutil.TempFile("", "")
+	if err != nil {
+		return "", err
+	}
+	fmt.Fprint(tmp, kubeconfig)
+	tmp.Close()
+	return tmp.Name(), nil
 }

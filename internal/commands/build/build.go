@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/docker/app/internal/dependency"
+
 	"github.com/deislabs/cnab-go/bundle"
 	cnab "github.com/deislabs/cnab-go/driver"
 	"github.com/docker/app/internal"
@@ -140,6 +142,10 @@ func runBuild(dockerCli command.Cli, contextPath string, opt buildOptions) error
 
 	bndl, err := buildImageUsingBuildx(app, contextPath, opt, dockerCli)
 	if err != nil {
+		return err
+	}
+
+	if err := dependency.AddDependencies(app, bndl); err != nil {
 		return err
 	}
 
